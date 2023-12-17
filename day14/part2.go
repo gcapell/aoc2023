@@ -20,12 +20,21 @@ type board struct {
 	alt [][]byte
 }
 
+func (b *board) rotate() {
+	for r, row := range b.b {
+		for c, elem := range row {
+			b.alt[c][r] = elem
+		}
+	}
+	b.b, b.alt = b.alt, b.b
+}
+
 func (b *board) score() int {
 	total := 0
-	for r, row := range b.b {
-		for _, c := range row {
-			if c == 'O' {
-				total += len(b.b) - r
+	for _, row := range b.b {
+		for c, elem := range row {
+			if elem == 'O' {
+				total += len(row) - c
 			}
 		}
 	}
@@ -42,7 +51,9 @@ func readBoard() *board {
 	for j := range alt {
 		alt[j] = make([]byte, len(b))
 	}
-	return &board{b: b, alt: alt}
+	reply := &board{b: b, alt: alt}
+	reply.rotate()
+	return reply
 }
 
 func show(b *board) {
@@ -52,25 +63,25 @@ func show(b *board) {
 }
 
 func slide(b *board) {
-	for c := 0; c < len(b.b[0]); c++ {
-		slideCol(b.b, c)
+	for _, row := range b.b {
+		slideRow(row)
 	}
 }
 
-func slideCol(b [][]byte, c int) {
+func slideRow(row []byte) {
 	dst := 0
 outer:
 	for {
-		var ok bool
-		dst, ok = nextAvailable(b, c, dst)
-		if !ok {
+		n := bytes.IndexByte(row[dst:], '.')
+		if n == -1 {
 			return
 		}
-		for src := dst + 1; src < len(b); src++ {
-			switch b[src][c] {
+		dst += n
+		for src := dst + 1; src < len(row); src++ {
+			switch row[src] {
 			case 'O':
-				b[dst][c] = 'O'
-				b[src][c] = '.'
+				row[dst] = 'O'
+				row[src] = '.'
 				dst++
 			case '#':
 				dst = src + 1
@@ -79,13 +90,4 @@ outer:
 		}
 		return
 	}
-}
-
-func nextAvailable(b [][]byte, c, r int) (int, bool) {
-	for ; r < len(b); r++ {
-		if b[r][c] == '.' {
-			return r, true
-		}
-	}
-	return -1, false
 }

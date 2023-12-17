@@ -29,7 +29,6 @@ func boards() []board {
 }
 
 func fixSmudge(b board) int {
-
 	for r := 1; r < len(b); r++ {
 		if fixSmudge1(b, r, true, len(b)) {
 			return r * 100

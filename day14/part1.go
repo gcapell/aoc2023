@@ -12,56 +12,76 @@ func main() {
 	slide(b)
 	fmt.Println()
 	show(b)
-	fmt.Println(score(b))
-
+	fmt.Println(b.score())
 }
 
-func score(b [][]byte) int {
+type board struct {
+	b   [][]byte
+	alt [][]byte
+}
+
+func (b *board) rotate() {
+	for r, row := range b.b {
+		for c, elem := range row {
+			b.alt[c][r] = elem
+		}
+	}
+	b.b, b.alt = b.alt, b.b
+}
+
+func (b *board) score() int {
 	total := 0
-	for r, row := range b {
-		for _, c := range row {
-			if c == 'O' {
-				total += len(b) - r
+	for _, row := range b.b {
+		for c, elem := range row {
+			if elem == 'O' {
+				total += len(row) - c
 			}
 		}
 	}
 	return total
 }
 
-func readBoard() [][]byte {
+func readBoard() *board {
 	data, err := os.ReadFile("input.txt")
 	if err != nil {
 		panic(err)
 	}
-	return bytes.Fields(data)
+	b := bytes.Fields(data)
+	alt := make([][]byte, len(b[0]))
+	for j := range alt {
+		alt[j] = make([]byte, len(b))
+	}
+	reply := &board{b: b, alt: alt}
+	reply.rotate()
+	return reply
 }
 
-func show(b [][]byte) {
-	for _, r := range b {
+func show(b *board) {
+	for _, r := range b.b {
 		fmt.Println(string(r))
 	}
 }
 
-func slide(b [][]byte) {
-	for c := 0; c < len(b[0]); c++ {
-		slideCol(b, c)
+func slide(b *board) {
+	for _, row := range b.b {
+		slideRow(row)
 	}
 }
 
-func slideCol(b [][]byte, c int) {
+func slideRow(row []byte) {
 	dst := 0
 outer:
 	for {
-		var ok bool
-		dst, ok = nextAvailable(b, c, dst)
-		if !ok {
+		n := bytes.IndexByte(row[dst:], '.')
+		if n == -1 {
 			return
 		}
-		for src := dst + 1; src < len(b); src++ {
-			switch b[src][c] {
+		dst += n
+		for src := dst + 1; src < len(row); src++ {
+			switch row[src] {
 			case 'O':
-				b[dst][c] = 'O'
-				b[src][c] = '.'
+				row[dst] = 'O'
+				row[src] = '.'
 				dst++
 			case '#':
 				dst = src + 1
@@ -70,13 +90,4 @@ outer:
 		}
 		return
 	}
-}
-
-func nextAvailable(b [][]byte, c, r int) (int, bool) {
-	for ; r < len(b); r++ {
-		if b[r][c] == '.' {
-			return r, true
-		}
-	}
-	return -1, false
 }
