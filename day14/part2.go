@@ -8,11 +8,35 @@ import (
 
 func main() {
 	b := readBoard()
-	show(b)
-	slide(b)
-	fmt.Println()
-	show(b)
-	fmt.Println(b.score())
+
+	b.rotate()
+	b.rotate()
+	b.rotate()
+
+	for j := 0; j < 1000; j++ {
+		b.cycle()
+		fmt.Println(j+1, b.score())
+	}
+}
+
+func (b *board) cycle() {
+	// N facing west
+	b.slide() // slide north
+
+	b.rotate()
+	// N facing north
+	b.slide() // slide west
+
+	b.rotate()
+	// N facing east
+	b.slide() // slide south
+
+	b.rotate()
+	// N facing south (east facing west)
+	b.slide() // slide east
+
+	b.rotate()
+	// N facing west
 }
 
 type board struct {
@@ -20,10 +44,11 @@ type board struct {
 	alt [][]byte
 }
 
+// rotate quarter turn clockwise
 func (b *board) rotate() {
 	for r, row := range b.b {
 		for c, elem := range row {
-			b.alt[c][r] = elem
+			b.alt[c][len(b.b)-1-r] = elem
 		}
 	}
 	b.b, b.alt = b.alt, b.b
@@ -52,17 +77,17 @@ func readBoard() *board {
 		alt[j] = make([]byte, len(b))
 	}
 	reply := &board{b: b, alt: alt}
-	reply.rotate()
 	return reply
 }
 
-func show(b *board) {
+func (b *board) show() {
 	for _, r := range b.b {
 		fmt.Println(string(r))
 	}
+	fmt.Println()
 }
 
-func slide(b *board) {
+func (b *board) slide() {
 	for _, row := range b.b {
 		slideRow(row)
 	}
